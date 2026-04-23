@@ -45,4 +45,4 @@ The only downside is, that this shortcode only supports .glb files. This is not 
 
 ## Example
 
-{{< 3d-model src="glb/capybara.glb" >}}
+{{< 3d-model src="glb/Capybara.glb" >}}
