@@ -1,0 +1,17 @@
+<script
+	type="module"
+	src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"
+></script>
+
+{{ $model := resources.Get (.Get "src") }} {{ if $model }}
+<model-viewer
+	src="{{ $model.RelPermalink }}"
+	alt="3D Modell"
+	auto-rotate
+	camera-controls
+	style="width: 100%; height: 400px; background-color: #ffffff"
+>
+</model-viewer>
+{{ else }}
+<p style="color: red">Model not found: {{ .Get "src" }}</p>
+{{ end }}
