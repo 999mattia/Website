@@ -30,7 +30,7 @@ params:
         buttons:
             - name: Posts
               url: "/posts"
-            - name: SwissWaterTemps
+            - name: SWT
               url: "https://swt.mattiag.ch/"
 
     socialIcons:
