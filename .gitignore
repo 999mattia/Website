@@ -1,0 +1,19 @@
+# Hugo build output
+public/
+resources/
+.hugo_build.lock
+
+# Hugo module cache
+/go.sum
+/go.work
+/go.work.sum
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
