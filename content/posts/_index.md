@@ -2,4 +2,4 @@
 title: "Posts"
 ---
 
-Posts
+My Posts
