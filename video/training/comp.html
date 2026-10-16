@@ -1,0 +1,146 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  :root { --bg: #f3f2ee; --ink: #1d1d1f; --soft: #6e6e73; --red: #d9434b; --line: rgba(0,0,0,.08); }
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; font-feature-settings: "tnum"; -webkit-font-smoothing: antialiased; }
+  .abs { position: absolute; }
+  .w { display: inline-block; }
+  .cap { left: 120px; right: 120px; top: 120px; font-size: 68px; font-weight: 650; letter-spacing: -0.03em; line-height: 1.08; }
+  .cap .soft { color: var(--soft); }
+  .card { border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 30px 80px rgba(40,30,20,.13), 0 0 0 1px var(--line); }
+  .card img, .card .piece { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .piece { background-size: 100% 100%; }
+  .mask { position: absolute; background: #fff; }
+  #hookNum { left: 0; right: 0; top: 300px; text-align: center; font-size: 230px; font-weight: 700; letter-spacing: -0.05em; line-height: 1; }
+  #hookNum small { font-size: 110px; font-weight: 600; letter-spacing: -0.03em; margin-left: 14px; }
+  #hookSub { left: 0; right: 0; top: 560px; text-align: center; font-size: 52px; color: var(--soft); font-weight: 500; }
+  #hookQ { left: 0; right: 0; top: 680px; text-align: center; font-size: 64px; font-weight: 650; color: var(--red); letter-spacing: -0.02em; }
+  #head { left: 120px; top: 270px; width: 1680px; height: 105px; }
+  #head img { width: 100%; }
+  #coach { left: 120px; top: 400px; width: 1680px; height: 340px; }
+  #mark { position: absolute; background: #ffd84d; mix-blend-mode: multiply; border-radius: 4px; }
+  #gauge { left: 120px; top: 330px; width: 1680px; height: 277px; }
+  #load { left: 120px; top: 640px; width: 1680px; height: 325px; }
+  #health { left: 120px; top: 330px; width: 1680px; height: 524px; }
+  #ytd { left: 120px; top: 330px; width: 1680px; height: 484px; }
+  #big { left: 120px; top: 110px; font-size: 150px; font-weight: 700; letter-spacing: -0.05em; color: var(--red); line-height: 1; }
+  #bigSub { left: 720px; top: 150px; font-size: 52px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+  #outro { inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  #outro .name { font-size: 120px; font-weight: 700; letter-spacing: -0.045em; }
+  #outro .line { margin-top: 26px; font-size: 44px; color: var(--soft); font-weight: 500; }
+  #outro .chips { margin-top: 44px; display: flex; gap: 16px; }
+  #outro .chip { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 12px 28px 14px; font-size: 32px; font-weight: 550; }
+  #outro .url { margin-top: 48px; font-size: 40px; font-weight: 650; color: var(--red); }
+</style></head>
+<body>
+<div id="hookNum" class="abs"><span id="num">0</span><small>km</small></div>
+<div id="hookSub" class="abs">of running this year.</div>
+<div id="hookQ" class="abs" data-split>Too much? Not enough?</div>
+
+<div id="c2" class="abs cap" data-split>Claude reads my watch data and writes the plan.</div>
+<div id="head" class="abs"><img src="a/head.png"></div>
+<div id="coach" class="abs card">
+  <div class="piece" id="coachTop" style="background-image:url(a/coach.png)"></div>
+  <div class="piece" id="coachBot" style="background-image:url(a/coach.png)"></div>
+  <div id="mark"></div>
+</div>
+
+<div id="c3" class="abs cap">Load, fitness and form, <span class="soft">from COROS and Strava.</span></div>
+<div id="gauge" class="abs card"><img src="a/gauge.png"></div>
+<div id="load" class="abs card"><img src="a/load.png"><div class="mask" id="loadMask"></div></div>
+
+<div id="c4" class="abs cap">Sleep, HRV and resting heart rate. <span class="soft">Every morning.</span></div>
+<div id="health" class="abs card">
+  <div class="piece q" style="background-image:url(a/health.png)"></div>
+  <div class="piece q" style="background-image:url(a/health.png)"></div>
+  <div class="piece q" style="background-image:url(a/health.png)"></div>
+  <div class="piece q" style="background-image:url(a/health.png)"></div>
+</div>
+
+<div id="big" class="abs">+114 %</div>
+<div id="bigSub" class="abs">more running than last year,<br><span style="color:var(--soft)">and the curve shows where it came from.</span></div>
+<div id="ytd" class="abs card"><img src="a/ytd.png"><div class="mask" id="ytdMask"></div></div>
+
+<div id="outro" class="abs">
+  <div class="name">Training Dashboard</div>
+  <div class="line">Watch data, Strava and a coach on one page.</div>
+  <div class="chips"><div class="chip">COROS</div><div class="chip">Strava</div><div class="chip">Claude coach</div><div class="chip">Svelte · TypeScript</div></div>
+</div>
+
+<img src="a/coach.png" style="display:none"><img src="a/health.png" style="display:none">
+<script src="../kit/kit.js"></script>
+<script>
+// a card that comes up from below and leaves upwards
+function card(sel, t, a, b, dy = 70) {
+  const k = E.out5(prog(t, a, a + 0.6)), o = E.in(prog(t, b - 0.35, b));
+  css(sel, { opacity: Math.min(prog(t, a, a + 0.2), 1 - o), transform: `translateY(${(1 - k) * dy - o * 40}px) scale(${0.97 + 0.03 * k})`, display: t < a || t > b ? 'none' : 'block' });
+}
+function caption(sel, t, a, b) {
+  const el = $(sel);
+  css(el, { display: t < a || t > b ? 'none' : 'block' });
+  if (el.querySelector('.w')) words(el, t, a, 0.06, 0.5, 30);
+  else css(el, { opacity: E.out(prog(t, a, a + 0.45)), transform: `translateY(${(1 - E.out(prog(t, a, a + 0.45))) * 30}px)` });
+  const o = E.in(prog(t, b - 0.3, b));
+  if (o > 0) css(el, { opacity: 1 - o, transform: `translateY(${-o * 30}px)` });
+}
+function render(t) {
+  // ---- hook: the year's kilometres count up, then the question
+  const kn = E.out5(prog(t, 0.05, 1.3));
+  $('#num').textContent = (632.4 * kn).toFixed(1);
+  const ho = E.in(prog(t, 2.55, 2.9));
+  css('#hookNum', { opacity: Math.min(prog(t, 0, 0.15), 1 - ho), transform: `scale(${0.92 + 0.08 * E.out(prog(t, 0, 1.3))}) translateY(${-ho * 40}px)` });
+  css('#hookSub', { opacity: Math.min(E.out(prog(t, 0.6, 1.0)), 1 - ho), transform: `translateY(${(1 - E.out(prog(t, 0.6, 1.0))) * 20 - ho * 40}px)` });
+  words($('#hookQ'), t, 1.45, 0.12, 0.5, 30);
+  css('#hookQ', { opacity: 1 - ho, transform: `translateY(${-ho * 40}px)` });
+
+  // ---- coach
+  caption('#c2', t, 3.0, 7.0);
+  card('#head', t, 3.35, 7.05, 40);
+  card('#coach', t, 3.5, 7.05);
+  const zc = E.inOut(prog(t, 5.3, 7.0));
+  $('#coach').style.transform += ` scale(${1 + 0.04 * zc})`; $('#coach').style.transformOrigin = '50% 30%';
+  $('#head').style.transform += ` translateY(${-zc * 30}px)`;
+  const split = 0.43;   // headline and summary above, the three suggestions below
+  css('#coachTop', { clipPath: `inset(0 0 ${100 - split * 100}% 0)` });
+  const sb = E.out5(prog(t, 4.3, 4.9));
+  css('#coachBot', { clipPath: `inset(${split * 100}% 0 0 0)`, opacity: sb, transform: `translateY(${(1 - sb) * 24}px)` });
+  const mk = E.inOut(prog(t, 4.9, 5.6));   // a marker under the coach's headline
+  css('#mark', { left: '90px', top: '76px', height: '30px', width: `${(492 - 90) * mk}px`, opacity: 0.55 });
+
+  // ---- training
+  caption('#c3', t, 7.2, 11.0);
+  card('#gauge', t, 7.35, 11.05);
+  card('#load', t, 7.6, 11.05);
+  const ld = E.inOut(prog(t, 8.1, 9.8));
+  const L = { x0: 0.034, x1: 0.995, y0: 0.31, y1: 0.9 };
+  css('#loadMask', { left: `${(L.x0 + (L.x1 - L.x0) * ld) * 100}%`, width: `${(L.x1 - L.x0) * (1 - ld) * 100 + 1}%`, top: `${L.y0 * 100}%`, height: `${(L.y1 - L.y0) * 100}%` });
+
+  // ---- health: four charts, one after another
+  caption('#c4', t, 11.0, 14.6);
+  card('#health', t, 11.15, 14.65);
+  $$('#health .q').forEach((q, i) => {
+    const k = E.out5(prog(t, 11.5 + i * 0.3, 12.1 + i * 0.3));
+    const [x, y] = [i % 2, Math.floor(i / 2)];
+    css(q, { clipPath: `inset(${y * 50}% ${(1 - x) * 50}% ${(1 - y) * 50}% ${x * 50}%)`, opacity: k, transform: `translateY(${(1 - k) * 18}px)` });
+  });
+
+  // ---- year to date
+  const bk = E.spring(prog(t, 14.7, 15.4));
+  const bo = E.in(prog(t, 17.4, 17.7));
+  css('#big', { display: t < 14.6 || t > 17.7 ? 'none' : 'block', opacity: Math.min(prog(t, 14.7, 14.9), 1 - bo), transform: `scale(${0.8 + 0.2 * bk})`, transformOrigin: '0 60%' });
+  css('#bigSub', { display: t < 14.6 || t > 17.7 ? 'none' : 'block', opacity: Math.min(E.out(prog(t, 15.0, 15.4)), 1 - bo) });
+  card('#ytd', t, 14.8, 17.75);
+  const yd = E.inOut(prog(t, 15.2, 16.9));
+  const Y = { x0: 0.034, x1: 0.995, y0: 0.53, y1: 1.0 };
+  css('#ytdMask', { left: `${(Y.x0 + (Y.x1 - Y.x0) * yd) * 100}%`, width: `${(Y.x1 - Y.x0) * (1 - yd) * 100 + 1}%`, top: `${Y.y0 * 100}%`, height: `${(Y.y1 - Y.y0) * 100}%` });
+
+  // ---- outro
+  css('#outro', { opacity: prog(t, 17.8, 18.05) });
+  css('#outro .name', { transform: `translateY(${(1 - E.out5(prog(t, 17.8, 18.4))) * 40}px)` });
+  css('#outro .line', { opacity: E.out(prog(t, 18.15, 18.5)) });
+  $$('#outro .chip').forEach((c, i) => { const k = E.spring(prog(t, 18.4 + i * 0.12, 19.0 + i * 0.12)); css(c, { opacity: prog(t, 18.4 + i * 0.12, 18.55 + i * 0.12), transform: `scale(${0.8 + 0.2 * k})` }); });
+}
+</script>
+</body></html>

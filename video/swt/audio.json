@@ -1,0 +1,155 @@
+{
+ "duration": 21,
+ "bpm": 88,
+ "root": 62,
+ "drop": 2.9,
+ "musicEnd": 17.95,
+ "prog": [
+  0,
+  5,
+  1,
+  4
+ ],
+ "bright": 0.55,
+ "arp": 0.45,
+ "kick": 0.7,
+ "seed": 21,
+ "fx": [
+  {
+   "t": 1.25,
+   "type": "pop",
+   "deg": 4,
+   "gain": 0.9
+  },
+  {
+   "t": 2.95,
+   "type": "whoosh",
+   "len": 0.7,
+   "gain": 0.8
+  },
+  {
+   "t": 3.95,
+   "type": "tap",
+   "gain": 0.8
+  },
+  {
+   "t": 6.75,
+   "type": "tap",
+   "gain": 0.8
+  },
+  {
+   "t": 7.3,
+   "type": "whoosh",
+   "len": 0.45,
+   "gain": 0.45
+  },
+  {
+   "t": 11.4,
+   "type": "whoosh",
+   "len": 0.7,
+   "gain": 0.8
+  },
+  {
+   "t": 12.55,
+   "type": "pop",
+   "deg": 2,
+   "gain": 0.7
+  },
+  {
+   "t": 15.05,
+   "type": "whoosh",
+   "len": 0.6,
+   "gain": 0.7
+  },
+  {
+   "t": 17.95,
+   "type": "riser",
+   "len": 1.1,
+   "gain": 0.6
+  },
+  {
+   "t": 4.3,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 4.415,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 4.53,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 4.645,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 4.76,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 4.875,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 4.99,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 5.1049999999999995,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 5.22,
+   "type": "tick",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 15.75,
+   "type": "pop",
+   "deg": 0,
+   "gain": 0.35,
+   "pan": -0.3
+  },
+  {
+   "t": 16.03,
+   "type": "pop",
+   "deg": 2,
+   "gain": 0.35,
+   "pan": -0.3
+  },
+  {
+   "t": 16.31,
+   "type": "pop",
+   "deg": 4,
+   "gain": 0.35,
+   "pan": -0.3
+  },
+  {
+   "t": 16.59,
+   "type": "pop",
+   "deg": 7,
+   "gain": 0.35,
+   "pan": -0.3
+  }
+ ],
+ "swing": 0.6,
+ "poster": 2.3
+}

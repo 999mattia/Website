@@ -1,0 +1,1 @@
+632 km of running this year, and a page that tells me whether that's too much: my training dashboard pulls COROS and Strava together, and a Claude coach reads it and writes the plan. (Health numbers in the clip are stand-ins.)

@@ -1,0 +1,1 @@
+My homelab as a floating voxel countryside: CPU load spins the wind turbines, RAM lights the chalet windows, the VPS gets its own island with a cable car, all under the real sun over the Seeland. Built with three.js, fed by Beszel and Home Assistant.

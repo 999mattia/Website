@@ -1,0 +1,100 @@
+{
+ "duration": 17,
+ "bpm": 82,
+ "root": 65,
+ "drop": 3.5,
+ "musicEnd": 14.0,
+ "prog": [
+  3,
+  2,
+  1,
+  0
+ ],
+ "bright": 0.4,
+ "arp": 0.45,
+ "kick": 0.6,
+ "seed": 22,
+ "padCut": 1100,
+ "fx": [
+  {
+   "t": 3.5,
+   "type": "whoosh",
+   "len": 0.6,
+   "gain": 0.6
+  },
+  {
+   "t": 6.0,
+   "type": "whoosh",
+   "len": 0.6,
+   "gain": 0.6
+  },
+  {
+   "t": 8.5,
+   "type": "whoosh",
+   "len": 0.6,
+   "gain": 0.6
+  },
+  {
+   "t": 11.5,
+   "type": "whoosh",
+   "len": 0.6,
+   "gain": 0.6
+  },
+  {
+   "t": 4.0,
+   "type": "pop",
+   "deg": 0,
+   "gain": 0.4,
+   "pan": -0.3
+  },
+  {
+   "t": 4.35,
+   "type": "pop",
+   "deg": 2,
+   "gain": 0.4,
+   "pan": 0.3
+  },
+  {
+   "t": 4.7,
+   "type": "pop",
+   "deg": 4,
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 6.5,
+   "type": "pop",
+   "deg": 2,
+   "gain": 0.4,
+   "pan": -0.3
+  },
+  {
+   "t": 6.85,
+   "type": "pop",
+   "deg": 4,
+   "gain": 0.4,
+   "pan": 0.3
+  },
+  {
+   "t": 12.0,
+   "type": "pop",
+   "deg": 7,
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 1.25,
+   "type": "bell",
+   "deg": 4,
+   "gain": 0.35
+  },
+  {
+   "t": 14.0,
+   "type": "riser",
+   "len": 1.0,
+   "gain": 0.5
+  }
+ ],
+ "swing": 0.6,
+ "poster": 5.4
+}

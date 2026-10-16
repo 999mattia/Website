@@ -1,0 +1,105 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  :root { --ink: #24262b; --soft: #676a72; --card: rgba(255,255,255,.86); --line: rgba(30,32,38,.08); --raspi: #b8405e; --blue: #3e6fc4; }
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body { background: #cfcac1; color: var(--ink); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .abs { position: absolute; }
+  #clip { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; transform-origin: 50% 50%; }
+  #veil { position: absolute; inset: 0; }
+  .w { display: inline-block; }
+  .frost { background: var(--card); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 10px 40px rgba(30,30,40,.18); backdrop-filter: blur(14px); }
+  #hook { left: 0; right: 0; top: 400px; text-align: center; font-size: 104px; font-weight: 700; letter-spacing: -0.04em; color: #fff; text-shadow: 0 4px 30px rgba(40,25,10,.45); }
+  #hook2 { left: 0; right: 0; top: 540px; text-align: center; font-size: 46px; font-weight: 600; color: #fff; text-shadow: 0 3px 20px rgba(40,25,10,.5); }
+  .lower { left: 90px; bottom: 90px; padding: 26px 36px 30px; max-width: 1180px; }
+  .lower .h { font-size: 58px; font-weight: 650; letter-spacing: -0.03em; line-height: 1.08; }
+  .lower .s { margin-top: 10px; font-size: 32px; color: var(--soft); font-weight: 500; }
+  .tag { padding: 8px 16px 10px; border-radius: 12px; font-size: 28px; font-weight: 600; background: rgba(255,255,255,.82); box-shadow: 0 4px 16px rgba(0,0,0,.18); white-space: nowrap; transform-origin: 50% 100%; }
+  .tag i { font-style: normal; color: var(--soft); font-weight: 500; margin-left: 8px; }
+  .tag.dark { background: rgba(22,26,36,.72); color: #eef0f4; }
+  .tag.dark i { color: #9aa0ad; }
+  #outro { inset: 0; display: flex; align-items: center; justify-content: center; }
+  #outro .frost { padding: 56px 80px 60px; text-align: center; background: rgba(22,26,36,.66); border-color: rgba(255,255,255,.1); color: #eef0f4; }
+  #outro .name { font-size: 112px; font-weight: 700; letter-spacing: -0.045em; }
+  #outro .line { margin-top: 16px; font-size: 40px; color: #c9cdd6; font-weight: 500; }
+  #outro .stack { margin-top: 30px; font-size: 30px; color: #9aa0ad; }
+  #outro .url { margin-top: 34px; font-size: 40px; font-weight: 650; color: #f0a3b6; }
+</style></head>
+<body>
+<img id="clip" src="a/f_open/0000.jpg">
+<div id="veil"></div>
+
+<div id="hook" class="abs" data-split>My servers live on an island.</div>
+<div id="hook2" class="abs">Every metric is something you can see.</div>
+
+<div id="l2" class="abs lower frost"><div class="h">CPU load spins the wind turbines.</div><div class="s">Hay in the barns is disk space. The chalet's windows are RAM.</div></div>
+<div id="l3" class="abs lower frost"><div class="h">The VPS has its own island.</div><div class="s">Its traffic rides across in the cable car's cabins.</div></div>
+<div id="l4" class="abs lower frost"><div class="h">Lit by the real sun over Dotzigen.</div><div class="s">Weather, the S36 and the Bielersee come along too.</div></div>
+<div id="l5" class="abs lower frost"><div class="h">Lit windows at night: RAM in use.</div></div>
+
+<div id="tg1" class="abs tag">CPU <i>turbines</i></div>
+<div id="tg2" class="abs tag">Disks <i>hay</i></div>
+<div id="tg3" class="abs tag">RAM <i>windows</i></div>
+<div id="tg4" class="abs tag">VPS traffic <i>cabins</i></div>
+<div id="tg5" class="abs tag">VPS <i>lighthouse</i></div>
+<div id="tg6" class="abs tag dark">RAM <i>lit windows</i></div>
+
+<div id="outro" class="abs"><div class="frost">
+  <div class="name">Homelab City</div>
+  <div class="line">My homelab as a voxel countryside.</div>
+  <div class="stack">three.js · Beszel · Home Assistant</div>
+</div></div>
+
+<script src="../kit/kit.js"></script>
+<script>
+// the clips, rendered frame by frame from the real city (mock data), back to back
+const CLIPS = [['f_open', 0, 105], ['f_turb', 3.5, 75], ['f_vps', 6.0, 75], ['f_lapse', 8.5, 90], ['f_night', 11.5, 75]];
+const END = 14.0;   // the outro sits on the last night frame
+const img = $('#clip');
+function tag(sel, t, a, b, x, y) {
+  const k = E.spring(prog(t, a, a + 0.6)), o = E.in(prog(t, b - 0.25, b));
+  css(sel, { left: `${x}px`, top: `${y}px`, opacity: Math.min(prog(t, a, a + 0.15), 1 - o), transform: `translate(-50%, -100%) scale(${0.6 + 0.4 * k})`, display: t < a || t > b ? 'none' : 'block' });
+}
+function lower(sel, t, a, b) {
+  const k = E.out5(prog(t, a, a + 0.55)), o = E.in(prog(t, b - 0.3, b));
+  css(sel, { display: t < a || t > b ? 'none' : 'block', opacity: Math.min(prog(t, a, a + 0.25), 1 - o), transform: `translateY(${(1 - k) * 40 + o * 20}px)` });
+  const s = $(sel).querySelector('.s'); if (s) css(s, { opacity: E.out(prog(t, a + 0.35, a + 0.8)) });
+}
+async function render(t) {
+  // which clip, which frame
+  let c = CLIPS[0];
+  for (const cl of CLIPS) if (t >= cl[1]) c = cl;
+  const i = Math.min(c[2] - 1, Math.floor((Math.min(t, END) - c[1]) * 30 + 1e-6));
+  await frameOf(img, `a/${c[0]}/${String(i).padStart(4, '0')}.jpg`);
+  // each cut lands with a small settle; the outro softens the last frame
+  const settle = c === CLIPS[0] ? 0 : 1 - E.out5(prog(t, c[1], c[1] + 0.6));
+  const out = E.inOut(prog(t, 14.0, 14.7));
+  css(img, { transform: `scale(${1 + 0.05 * settle + 0.04 * out})`, filter: `blur(${out * 10}px) brightness(${1 - out * 0.25})` });
+  css('#veil', { background: 'radial-gradient(ellipse 900px 300px at 50% 47%, rgba(25,18,10,.42), rgba(25,18,10,0))', opacity: Math.min(E.out(prog(t, 0.1, 0.6)), 1 - E.in(prog(t, 2.95, 3.35))) });
+
+  // hook
+  words($('#hook'), t, 0.25, 0.1, 0.55, 40);
+  const ho = E.in(prog(t, 2.95, 3.35));
+  css('#hook', { opacity: 1 - ho, transform: `translateY(${-ho * 30}px)` });
+  css('#hook2', { opacity: Math.min(E.out(prog(t, 1.2, 1.6)), 1 - ho), transform: `translateY(${(1 - E.out(prog(t, 1.2, 1.6))) * 20 - ho * 30}px)` });
+
+  lower('#l2', t, 3.7, 5.95); lower('#l3', t, 6.2, 8.45); lower('#l4', t, 8.7, 11.45); lower('#l5', t, 11.7, 13.95);
+  // callouts on the footage (positions on the 1920 frame, drifting with the camera a little)
+  const d2 = prog(t, 3.5, 6.0), d3 = prog(t, 6.0, 8.5), d5 = prog(t, 11.5, 14.0);
+  tag('#tg1', t, 4.0, 5.95, 626 - 400 * d2, 380 - 175 * d2);
+  tag('#tg2', t, 4.35, 5.95, 1290 - 300 * d2, 300 - 40 * d2);
+  tag('#tg3', t, 4.7, 5.95, 870 - 250 * d2, 200);
+  tag('#tg4', t, 6.5, 8.45, 520 - 150 * d3, 375);
+  tag('#tg5', t, 6.85, 8.45, 1690 - 190 * d3, 465);
+  tag('#tg6', t, 12.0, 13.95, 910 - 250 * d5, 650);
+
+  // outro
+  const ok = E.out5(prog(t, 14.2, 14.9));
+  css('#outro', { opacity: prog(t, 14.15, 14.45) });
+  css('#outro .frost', { transform: `translateY(${(1 - ok) * 40}px) scale(${0.96 + 0.04 * ok})` });
+  css('#outro .line', { opacity: E.out(prog(t, 14.5, 14.9)) });
+  css('#outro .stack', { opacity: E.out(prog(t, 14.75, 15.1)) });
+}
+</script>
+</body></html>
