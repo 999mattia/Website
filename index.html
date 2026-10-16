@@ -574,6 +574,8 @@ function pine(x, z) {
 let planted = 0;
 for (let tries = 0; tries < 4000 && planted < 26; tries++) {
   const u = (rand() * 2 - 1) * EA * 0.9, v = (rand() * 2 - 1) * EB * 0.9, x = Math.round((u + v) / Math.SQRT2), z = Math.round((v - u) / Math.SQRT2);
+  // nothing between the floorball goal and the camera
+  { const gu = U(x, z) - U(1.5, -18.5), gv = V(x, z) - V(1.5, -18.5); if (Math.abs(gu) < 8 && gv > -4 && gv < 16) continue; }
   // keep the crowns clear of the runner's and the cyclist's heads
   if (Math.abs(Math.hypot(x, z) - ringR(Math.atan2(z, x))) < 5 || (z > 3 && Math.abs(x - pathX(z)) < 5) || (Math.abs(x) < 5 && z > -16 && z < 4)) continue;
   if (!clear(x, z, 2)) continue;
