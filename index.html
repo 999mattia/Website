@@ -66,7 +66,8 @@
   .top h1 { font-size: 22px; font-weight: 600; }
   .top nav { display: flex; gap: 6px; }
   .top nav a { text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 10px; }
-  #sky { position: absolute; left: 20px; bottom: 16px; padding: 6px 11px 7px; font-size: 12px; display: flex; gap: 10px; align-items: baseline; z-index: 3; background: var(--label-bg); box-shadow: none; }
+  /* in line with the header and the sections: the same 1060 px column with its 20 px gutter */
+  #sky { position: absolute; left: max(20px, calc((100% - 1060px) / 2 + 20px)); bottom: 16px; padding: 6px 11px 7px; font-size: 12px; display: flex; gap: 10px; align-items: baseline; z-index: 3; background: var(--label-bg); box-shadow: none; }
   #sky b { font-size: 15px; font-weight: 600; }
   #sky[hidden] { display: none; }
   .tag {
@@ -146,7 +147,6 @@
     .arch .tall { display: block; }
   }
   @media (max-width: 600px) {
-    #sky { left: 16px; bottom: 12px; }
     .hero { height: 400px; }
   }
 </style>
