@@ -490,12 +490,6 @@ for (let x = -EA; x <= EA; x++) for (let z = -EA; z <= EA; z++) {
 }
 const G = (x, z) => (H(x, z) ?? 0) + 1;   // first free block above the ground
 
-/* flowers in the meadow */
-for (const [k, h] of top) {
-  const [x, z] = k.split(',').map(Number);
-  if (h < 0 || pathAt(x, z) || nearTrack(x, z) || rand() > 0.025) continue;
-  set(x, h + 1, z, [PAL.yellow, PAL.white, '#e07a8a', '#9a86d6'][Math.floor(rand() * 4)]);
-}
 
 /* chalet: coding. Plaster ground floor, wooden upper floor, a gable roof with overhang, a balcony */
 {
