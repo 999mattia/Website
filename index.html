@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en" data-time="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mattia G</title>
+<meta name="description" content="Mattia G: floorball, running, cycling, coding and a small homelab in the Seeland.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='1' y='7' width='14' height='4' rx='1' fill='%2386b86a'/><rect x='4' y='11' width='8' height='3' fill='%238f8b86'/><rect x='6' y='2' width='4' height='5' fill='%23efe9df'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+</script>
+<style>
+  /* Like Homelab City: the page follows the real sun over the Seeland, not the OS theme. data-time="day" | "night" */
+  :root {
+    --bg-top: #ebe8e2; --bg-bottom: #cfcac1;
+    --ink: #24262b; --ink-soft: #676a72;
+    --card: rgba(255, 255, 255, 0.86); --card-line: rgba(30, 32, 38, 0.08);
+    --label-bg: rgba(255, 255, 255, 0.6);
+    --card-ink: #1f2126; --card-soft: #6d7079; --track: rgba(30, 32, 38, 0.1);
+    --ok: #3fae5a; --warn: #e3a21a; --bad: #e0483e;
+    --line1: #3a82d6; --line2: #3fae5a;
+    --vps: #3e6fc4; --server: #59626f; --raspi: #b8405e;
+    --shadow: 0 2px 10px rgba(30, 30, 40, 0.12);
+    color-scheme: light;
+  }
+  :root[data-time="night"] {
+    --bg-top: #2b3244; --bg-bottom: #12151d;
+    --ink: #e9eaee; --ink-soft: #9ea3b0;
+    --card: rgba(22, 26, 36, 0.82); --card-line: rgba(255, 255, 255, 0.08);
+    --label-bg: rgba(22, 26, 36, 0.55);
+    --card-ink: #eef0f4; --card-soft: #9aa0ad; --track: rgba(255, 255, 255, 0.12);
+    --ok: #5fd27a; --warn: #f2bd3c; --bad: #ff6a5f;
+    --line1: #6cb0ff; --line2: #5fd27a;
+    --vps: #6f9cf0; --server: #a3acb9; --raspi: #e0708c;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100%;
+    background: var(--bg-bottom) radial-gradient(ellipse 120% 70% at 50% 18%, var(--bg-top), var(--bg-bottom)) no-repeat;
+    color: var(--ink); font: 15px/1.5 "Inter", system-ui, sans-serif;
+    font-feature-settings: "tnum"; -webkit-font-smoothing: antialiased;
+    transition: background-color 1s;
+  }
+  h1, h2, h3 { margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  p { margin: 0; }
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; border-radius: 4px; }
+
+  .card {
+    background: var(--card); color: var(--card-ink); border: 1px solid var(--card-line);
+    border-radius: 8px; box-shadow: var(--shadow);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .soft { color: var(--card-soft); }
+
+  /* ---------- hero: the island, with a HUD like the city's ---------- */
+  .hero { position: relative; height: clamp(440px, 76vh, 760px); margin-top: -8px; }
+  #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .top { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 2; }
+  .top h1 { font-size: 22px; font-weight: 600; }
+  .top nav { display: flex; gap: 6px; }
+  .top nav a { text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 10px; }
+  #sky { position: absolute; left: 20px; bottom: 16px; padding: 6px 11px 7px; font-size: 12px; display: flex; gap: 10px; align-items: baseline; z-index: 3; background: var(--label-bg); box-shadow: none; }
+  #sky b { font-size: 15px; font-weight: 600; }
+  #sky[hidden] { display: none; }
+  .tag {
+    position: absolute; left: 0; top: 0; padding: 2px 7px 3px; white-space: nowrap; font-size: 12px; font-weight: 500;
+    display: flex; align-items: center; gap: 5px; pointer-events: auto; cursor: pointer; will-change: transform;
+    background: var(--label-bg); box-shadow: none; border-radius: 6px; transition: background .15s; text-decoration: none;
+  }
+  .tag b { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .tag:hover { background: var(--card); box-shadow: var(--shadow); z-index: 5; }
+
+  /* ---------- the sections below ---------- */
+  main { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 8px 48px; display: flex; flex-direction: column; gap: 56px; }
+  section { display: flex; flex-direction: column; gap: 16px; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .head h2 { font-size: 22px; font-weight: 600; }
+  .head .src { font-size: 12px; color: var(--ink-soft); }
+  .note { font-size: 12px; color: var(--ink-soft); }
+
+  .grid { display: grid; gap: 14px; }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .tile { padding: 14px 16px 15px; display: flex; flex-direction: column; gap: 4px; }
+  .tile .t { font-size: 12px; font-weight: 500; color: var(--card-soft); display: flex; align-items: center; gap: 6px; }
+  .tile .v { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+  .tile .v small { font-size: 14px; font-weight: 500; color: var(--card-soft); margin-left: 2px; }
+  .tile .s { font-size: 13px; color: var(--card-soft); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .bar { height: 3px; margin-top: 6px; border-radius: 2px; background: var(--track); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 2px; }
+
+  .split { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; }
+  .panel { padding: 14px 18px 15px; }
+  .panel .h { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+  .row { display: flex; justify-content: space-between; gap: 16px; line-height: 1.7; }
+  .row span:first-child { color: var(--card-soft); }
+  .row span:last-child { text-align: right; font-weight: 500; }
+  .sub { font-weight: 600; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--card-line); }
+
+  .spark svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .spark .g { stroke: var(--track); stroke-width: 1; }
+  .spark .g.dash { stroke-dasharray: 2 3; }
+  .spark .l { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .spark .a { stroke: none; opacity: .14; }
+  .spark .d { stroke: var(--card); stroke-width: 1.5; }
+  .spark .l.s1 { stroke: var(--line1); } .spark .a.s1, .spark .d.s1 { fill: var(--line1); }
+  .spark .l.s2 { stroke: var(--line2); } .spark .a.s2, .spark .d.s2 { fill: var(--line2); }
+  .spark text { fill: var(--card-soft); font: 11px "Inter", system-ui, sans-serif; }
+  .ax { display: flex; gap: 14px; margin-bottom: 6px; color: var(--card-soft); font-size: 12px; }
+  .ax i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+
+  .water .big { font-size: 40px; font-weight: 600; letter-spacing: -.02em; color: var(--line1); line-height: 1.1; }
+  .water .big small { font-size: 18px; }
+  .water .place { font-size: 17px; font-weight: 600; }
+
+  .arch { padding: 10px; overflow-x: auto; }
+  .arch svg { width: 100%; height: auto; display: block; }
+  .arch .tall { display: none; max-width: 420px; margin: 0 auto; }
+  .arch text { fill: var(--card-ink); font-family: "Inter", system-ui, sans-serif; font-size: 13px; }
+  .arch .sm { fill: var(--card-soft); font-size: 11px; }
+  .arch .hd { font-size: 15px; font-weight: 600; }
+
+  .proj { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .proj .roof { height: 6px; }
+  .proj .in { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .proj h3 { font-size: 17px; font-weight: 600; }
+  .proj p { font-size: 14px; }
+  .proj .stack { font-size: 12px; color: var(--card-soft); }
+  .proj a { margin-top: auto; font-size: 13px; font-weight: 500; text-decoration: none; color: var(--line1); }
+
+  footer { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 0 32px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--ink-soft); }
+
+  @media (max-width: 820px) {
+    .g4 { grid-template-columns: 1fr 1fr; }
+    .g2, .g3, .split { grid-template-columns: 1fr; }
+    .arch .wide { display: none; }
+    .arch .tall { display: block; }
+  }
+  @media (max-width: 600px) {
+    #sky { left: 16px; bottom: 12px; }
+    .hero { height: 400px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Mattia G</h1>
+  <nav><a class="card" href="https://github.com/999mattia/">GitHub</a><a class="card" href="https://strava.com/athletes/139113253/">Strava</a></nav>
+</header>
+<div class="hero">
+  <canvas id="scene" aria-label="A small voxel island under the current sun and weather over the Seeland: a chalet, a floorball goal, a running track with a clubhouse, a pond and a server shed"></canvas>
+  <div id="labels"></div>
+  <div id="sky" class="card"></div>
+</div>
+
+<main>
+
+  <section id="training" aria-labelledby="h-train">
+    <div class="head"><h2 id="h-train">Training in 2026</h2><span class="src">from Strava</span></div>
+    <div class="grid g4">
+      <div class="card tile"><span class="t"><span class="dot" style="background:var(--line2)"></span>Running</span><span class="v">641<small>km</small></span><span class="s">107 runs</span></div>
+      <div class="card tile"><span class="t"><span class="dot" style="background:var(--line1)"></span>Cycling</span><span class="v">1,652<small>km</small></span><span class="s">40 rides</span></div>
+      <div class="card tile"><span class="t">Last run · Sun 12 Oct</span><span class="v">6.5<small>km</small></span><span class="s">5:22 /km · 35 min</span></div>
+      <div class="card tile"><span class="t">Last ride · Sat 4 Oct</span><span class="v">68<small>km</small></span><span class="s">25.5 km/h · 2 h 41</span></div>
+    </div>
+    <div class="split">
+      <div class="card panel">
+        <div class="h">Kilometres per month</div>
+        <div class="ax"><span><i style="background:var(--line2)"></i>Running</span><span><i style="background:var(--line1)"></i>Cycling ÷ 4</span></div>
+        <div class="spark"><svg id="months" viewBox="0 0 560 190" role="img" aria-label="Kilometres per month in 2026: running and cycling"></svg></div>
+      </div>
+      <div class="card panel">
+        <div class="h">Bürelouf 2026</div>
+        <div class="row"><span>Time</span><span>51:07</span></div>
+        <div class="row"><span>Pace</span><span>4:24 /km</span></div>
+        <div class="row"><span>Distance</span><span>11.6 km · 179 m up</span></div>
+        <div class="row"><span>Overall</span><span>48 of 407</span></div>
+        <div class="row"><span>Age group</span><span>12 of 60</span></div>
+        <div class="sub">Next year</div>
+        <div class="row"><span>Goal</span><span>under 50:00</span></div>
+        <div class="row"><span>Pace needed</span><span>4:18 /km</span></div>
+        <div class="bar"><i style="width:97.8%;background:var(--warn)"></i></div>
+        <div class="row"><span class="note" style="color:var(--card-soft)">1:08 to go</span><span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="water" aria-labelledby="h-water">
+    <div class="head"><h2 id="h-water">Warm enough for a swim?</h2><span class="src">from SwissWaterTemps</span></div>
+    <div class="grid g2 water">
+      <div class="card panel">
+        <div class="place">Bielersee · Strandbad Biel</div>
+        <div class="big" data-w="wtlive-biel-strandbad" data-k="temp">–<small>°C</small></div>
+        <div class="row"><span>Last 24 h</span><span data-w="wtlive-biel-strandbad" data-k="change">–</span></div>
+        <div class="row"><span>Measured</span><span data-w="wtlive-biel-strandbad" data-k="at">–</span></div>
+      </div>
+      <div class="card panel">
+        <div class="place">Aare · Brügg</div>
+        <div class="big" data-w="bafu-2029" data-k="temp">–<small>°C</small></div>
+        <div class="row"><span>Last 24 h</span><span data-w="bafu-2029" data-k="change">–</span></div>
+        <div class="row"><span>Measured</span><span data-w="bafu-2029" data-k="at">–</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="homelab" aria-labelledby="h-lab">
+    <div class="head"><h2 id="h-lab">How this page got to you</h2><span class="src">the homelab</span></div>
+    <div class="card arch">
+      <svg class="wide" viewBox="0 0 900 260" role="img" aria-label="Your request goes over HTTPS to the VPS, then through WireGuard to the server at home; the Raspberry Pi watches both">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--card-soft)"/></marker></defs>
+        <rect x="14" y="98" width="110" height="44" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <text x="69" y="125" text-anchor="middle" class="hd">You</text>
+        <line x1="124" y1="120" x2="196" y2="120" stroke="var(--card-soft)" stroke-width="1.8" marker-end="url(#ah)"/>
+        <text x="160" y="110" text-anchor="middle" class="sm">HTTPS</text>
+
+        <rect x="200" y="56" width="220" height="128" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <rect x="200" y="56" width="220" height="6" rx="3" fill="var(--vps)"/>
+        <text x="218" y="90" class="hd">VPS</text>
+        <text x="218" y="120">Traefik · TLS for every domain</text>
+        <text x="218" y="144">CrowdSec</text>
+        <text x="218" y="168">Uptime Kuma, the outside view</text>
+
+        <path d="M420 120 H 552" stroke="var(--line1)" stroke-width="1.8" marker-end="url(#ah)"/>
+        <text x="486" y="110" text-anchor="middle" class="sm">WireGuard</text>
+
+        <rect x="556" y="16" width="330" height="228" rx="10" fill="none" stroke="var(--track)" stroke-dasharray="5 5"/>
+        <text x="572" y="38" class="sm">HOME</text>
+        <rect x="572" y="50" width="298" height="112" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <rect x="572" y="50" width="298" height="6" rx="3" fill="var(--server)"/>
+        <text x="588" y="82" class="hd">Server</text><text x="646" y="82" class="sm">ThinkCentre</text>
+        <text x="588" y="110">Traefik → this website, Home Assistant,</text>
+        <text x="588" y="130">Vaultwarden, Jellyfin, Homelab City,</text>
+        <text x="588" y="150">Komodo and more</text>
+        <rect x="572" y="174" width="298" height="56" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <rect x="572" y="174" width="298" height="6" rx="3" fill="var(--raspi)"/>
+        <text x="588" y="204" class="hd">Raspberry Pi</text>
+        <text x="588" y="222" class="sm">Uptime Kuma · Beszel metrics</text>
+      </svg>
+      <svg class="tall" viewBox="0 0 340 470" role="img" aria-label="Your request goes over HTTPS to the VPS, then through WireGuard to the server at home; the Raspberry Pi watches both">
+        <rect x="115" y="10" width="110" height="40" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <text x="170" y="35" text-anchor="middle" class="hd">You</text>
+        <line x1="170" y1="50" x2="170" y2="92" stroke="var(--card-soft)" stroke-width="1.8" marker-end="url(#ah2)"/>
+        <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--card-soft)"/></marker></defs>
+        <text x="180" y="76" class="sm">HTTPS</text>
+        <rect x="20" y="96" width="300" height="104" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <rect x="20" y="96" width="300" height="6" rx="3" fill="var(--vps)"/>
+        <text x="36" y="128" class="hd">VPS</text>
+        <text x="36" y="152">Traefik · TLS for every domain</text>
+        <text x="36" y="172">CrowdSec</text>
+        <text x="36" y="192">Uptime Kuma, the outside view</text>
+        <line x1="170" y1="200" x2="170" y2="242" stroke="var(--line1)" stroke-width="1.8" marker-end="url(#ah2)"/>
+        <text x="180" y="226" class="sm">WireGuard</text>
+        <rect x="8" y="246" width="324" height="216" rx="10" fill="none" stroke="var(--track)" stroke-dasharray="5 5"/>
+        <text x="22" y="266" class="sm">HOME</text>
+        <rect x="20" y="276" width="300" height="104" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <rect x="20" y="276" width="300" height="6" rx="3" fill="var(--server)"/>
+        <text x="36" y="308" class="hd">Server</text><text x="94" y="308" class="sm">ThinkCentre</text>
+        <text x="36" y="332">Traefik → this website, Home Assistant,</text>
+        <text x="36" y="350">Vaultwarden, Jellyfin, Homelab City,</text>
+        <text x="36" y="368">Komodo and more</text>
+        <rect x="20" y="392" width="300" height="58" rx="8" fill="none" stroke="var(--track)" stroke-width="1.5"/>
+        <rect x="20" y="392" width="300" height="6" rx="3" fill="var(--raspi)"/>
+        <text x="36" y="422" class="hd">Raspberry Pi</text>
+        <text x="36" y="440" class="sm">Uptime Kuma · Beszel metrics</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="projects" aria-labelledby="h-proj">
+    <div class="head"><h2 id="h-proj">Things I built</h2></div>
+    <div class="grid g3">
+      <article class="card proj"><div class="roof" style="background:var(--line1)"></div><div class="in">
+        <h3>SwissWaterTemps</h3>
+        <p>Water temperatures of Swiss lakes and rivers on one map, from BAFU, Alplakes and local stations. The numbers above come from it.</p>
+        <span class="stack">Svelte · own API · PWA</span>
+        <a href="https://swt.mattiag.ch/">swt.mattiag.ch →</a>
+      </div></article>
+      <article class="card proj"><div class="roof" style="background:var(--raspi)"></div><div class="in">
+        <h3>Homelab City</h3>
+        <p>My homelab as a voxel countryside under the real sun: wind turbines turn with CPU load, chalet windows light up with RAM, the VPS has its own island with a cable car.</p>
+        <span class="stack">three.js · Beszel · Home Assistant</span>
+        <a href="#homelab">Short clip (coming)</a>
+      </div></article>
+      <article class="card proj"><div class="roof" style="background:var(--line2)"></div><div class="in">
+        <h3>Training dashboard</h3>
+        <p>Load, recovery and sleep from my COROS watch on one page, built on a small unofficial COROS API client.</p>
+        <span class="stack">Python · COROS API</span>
+        <a href="https://github.com/999mattia/">On GitHub →</a>
+      </div></article>
+    </div>
+  </section>
+</main>
+<footer><span>Mattia G · Seeland, Switzerland</span></footer>
+
+<script>
+/* ---------- the monthly chart, drawn like the city's tooltip charts ---------- */
+(function () {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
+  const run = [0, 9.5, 34.5, 74.6, 72.7, 88.1, 85.1, 108.9, 134.6, 32.8];
+  const ride = [0, 84.4, 96.9, 273.1, 229.9, 99.9, 332.1, 349.9, 117.4, 68.3].map((v) => v / 4);
+  const W = 560, H = 190, L = 30, R = 10, T = 8, B = 22, max = 150;
+  const x = (i) => L + i * (W - L - R) / (months.length - 1), y = (v) => T + (H - T - B) * (1 - v / max);
+  let s = '';
+  for (const t of [0, 50, 100, 150]) s += `<line class="g${t ? ' dash' : ''}" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
+  months.forEach((m, i) => { s += `<text x="${x(i)}" y="${H - 4}" text-anchor="middle">${m}</text>`; });
+  const series = (data, cls) => {
+    const pts = data.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+    let o = `<path class="a ${cls}" d="M${x(0)},${y(0)} L${pts.join(' L')} L${x(data.length - 1)},${y(0)}Z"/>`;
+    o += `<path class="l ${cls}" d="M${pts.join(' L')}"/>`;
+    data.forEach((v, i) => { o += `<circle class="d ${cls}" cx="${x(i)}" cy="${y(v)}" r="${i === data.length - 1 ? 4 : 2.6}"><title>${months[i]}: ${cls === 's1' ? (v * 4).toFixed(0) + ' km cycling' : v + ' km running'}</title></circle>`; });
+    return o;
+  };
+  s += series(ride, 's1') + series(run, 's2');
+  document.getElementById('months').innerHTML = s;
+})();
+</script>
+
+<script>
+/* ---------- water temperatures, from SwissWaterTemps (proxied by this site's nginx) ---------- */
+(async function () {
+  const fmt = (v) => v.toFixed(1);
+  const when = (iso) => {
+    if (!iso) return '–';
+    const d = new Date(iso), now = new Date();
+    const hm = d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Zurich' });
+    return d.toDateString() === now.toDateString() ? `today ${hm}` : `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/Zurich' })} ${hm}`;
+  };
+  try {
+    const res = await fetch('/api/water', { headers: { Accept: 'application/json' } });
+    const all = await res.json(), list = Array.isArray(all) ? all : all.stations || [];
+    for (const st of list) {
+      const els = document.querySelectorAll(`[data-w="${st.id}"]`);
+      if (!els.length || st.temperature == null) continue;
+      for (const el of els) {
+        const k = el.dataset.k;
+        if (k === 'temp') el.firstChild.textContent = fmt(st.temperature);
+        if (k === 'change') el.textContent = st.change24h == null ? '–' : `${st.change24h > 0 ? '+' : st.change24h < 0 ? '−' : '±'}${Math.abs(st.change24h).toFixed(1)}°`
+          + (st.min24h != null && st.max24h != null ? ` · range ${fmt(st.min24h)}–${fmt(st.max24h)}°` : '');
+        if (k === 'at') el.textContent = when(st.measuredAt || st.hydro?.measuredAt);
+      }
+    }
+  } catch (e) { /* the cards keep their dashes */ }
+})();
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const root = document.documentElement;
+const canvas = document.getElementById('scene');
+const hero = canvas.parentElement;
+
+/* ---------- the real sun over the Seeland (47.1 N, 7.3 E), like the city's day/night ---------- */
+function sunNow(d = new Date()) {
+  const rad = Math.PI / 180, lat = 47.1 * rad;
+  const start = Date.UTC(d.getUTCFullYear(), 0, 0), n = (d - start) / 864e5;
+  const decl = 23.44 * rad * Math.sin(2 * Math.PI * (284 + n) / 365);
+  const solar = d.getUTCHours() + d.getUTCMinutes() / 60 + 7.3 / 15;
+  const ha = (solar - 12) * 15 * rad;
+  const elev = Math.asin(Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.cos(ha));
+  return { elev, ha };
+}
+
+/* ---------- look: the city's palette, edge texture, lights and tone mapping ---------- */
+const PAL = {
+  grassA: '#7fb262', grassB: '#a5c873', dirt: '#9b7657', stone: '#9d9a94', stoneDark: '#83807a',
+  strataSand: '#b9a688', strataRed: '#a88169', moss: '#62824a', sand: '#e4d4a6', path: '#d6cbb3',
+  trunk: '#7a5a3c', leavesA: '#5f9e4f', leavesB: '#7cb35c', pine: '#3e7a56', pineB: '#38714f',
+  cream: '#efe9df', plaster: '#f1ede4', door: '#5a4636', roofTerra: '#b0583e', roofServer: '#59626f', chimney: '#8d8a86',
+  white: '#f4f4f2', red: '#cf3a34', water: '#5e9fd0', waterDeep: '#4a8cc2', dark: '#2b2f36', skin: '#e8c3a0', shirt: '#3fae5a', shorts: '#2f3a4f',
+  glassDay: '#41506a', lit: '#ffd27a', led: '#4fc06a',
+  yellow: '#f2c94c', mast: '#a9afb7', wood: '#b07c4c', beam: '#6e4a2e',
+  track: '#b8644a', barnRed: '#b4493c', roofSlate: '#5b6068', helmet: '#f2c94c',
+};
+const edgeTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d'), img = g.createImageData(32, 32);
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+    const d = Math.min(x, y, 31 - x, 31 - y), v = 255 * (1 - 0.14 * Math.max(0, 1 - d / 2.5)), i = (y * 32 + x) * 4;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+})();
+
+/* ---------- a deterministic little world, in half-size blocks like the city's fine detail ---------- */
+const S = 0.5;           // one block is half a unit
+let seed = 7; const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const vox = new Map();   // "x,y,z" -> colour, in block coordinates
+const K = (x, y, z) => `${x},${y},${z}`;
+const set = (x, y, z, c) => vox.set(K(x, y, z), c);
+const fill = (x0, y0, z0, x1, y1, z1, c) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) set(x, y, z, c); };
+const glow = new Map();  // window and LED blocks: their own mesh, lit at night
+const hotspots = [];     // the tags on the map; p in block coordinates
+const W2 = (p) => p.map((v) => v * S);
+
+/* smooth value noise, for the coast, the hills and the grass tint */
+function makeNoise(sd) {
+  const h = (x, z) => { const s = Math.sin(x * 127.1 + z * 311.7 + sd * 74.7) * 43758.5453; return s - Math.floor(s); };
+  return (x, z) => {
+    const ix = Math.floor(x), iz = Math.floor(z), u = x - ix, v = z - iz, su = u * u * (3 - 2 * u), sv = v * v * (3 - 2 * v);
+    const a = h(ix, iz), b = h(ix + 1, iz), c = h(ix, iz + 1), d = h(ix + 1, iz + 1);
+    return a + (b - a) * su + (c - a) * sv + (a - b - c + d) * su * sv;
+  };
+}
+const nCoast = makeNoise(1), nHill = makeNoise(2), nTint = makeNoise(3), nDepth = makeNoise(4);
+
+const R = 26;
+const EA = 50, EB = 25;   // semi-axes in blocks: across the screen, and towards the camera
+const U = (x, z) => (x - z) / Math.SQRT2, V = (x, z) => (x + z) / Math.SQRT2;
+const pond = (x, z) => ((x - 24) / 6) ** 2 + ((z + 22) / 4.5) ** 2 < 1;
+const pondDeep = (x, z) => ((x - 24) / 4) ** 2 + ((z + 22) / 2.8) ** 2 < 1;
+/* the coast, and the ring path just inside it that goes all the way round the island */
+const coastR = (a) => {
+  const u = Math.cos(a - (-Math.PI / 4)), v = Math.sin(a - (-Math.PI / 4));
+  return 1 / Math.hypot(u / EA, v / EB) + 2.5 * (nCoast(Math.cos(a) * 2.2 + 5, Math.sin(a) * 2.2 + 5) - 0.5) * 2;
+};
+const ringR = (a) => coastR(a) - 2.4;
+const ringAt = (x, z) => Math.abs(Math.hypot(x, z) - ringR(Math.atan2(z, x))) < 1.1;
+const pathX = (z) => -0.15 * (z - 6) + 1.2 * Math.sin((z - 6) / 5);   // the path from the track to the ring
+/* the running track: an oval of tartan with a lane line, grass inside */
+const TR = { cx: 9, cz: 3, rx: 9, rz: 6.5, w: 3 };
+const ell = (x, z, a, b) => ((x - TR.cx) / a) ** 2 + ((z - TR.cz) / b) ** 2;
+const trackAt = (x, z) => ell(x, z, TR.rx, TR.rz) <= 1 && ell(x, z, TR.rx - TR.w, TR.rz - TR.w) > 1;
+const laneAt = (x, z) => trackAt(x, z) && Math.abs(ell(x, z, TR.rx - TR.w / 2, TR.rz - TR.w / 2) - 1) < 0.15;
+const nearTrack = (x, z) => ell(x, z, TR.rx + 2, TR.rz + 2) <= 1;
+const pathAt = (x, z) => (z >= 5 && Math.abs(x - pathX(z)) < 1.1) || (Math.abs(x) < 1.1 && z > -15 && z < 4) || ringAt(x, z);
+const top = new Map();
+const H = (x, z) => top.get(`${x},${z}`);
+for (let x = -EA; x <= EA; x++) for (let z = -EA; z <= EA; z++) {
+  const a = Math.atan2(z, x), d = Math.hypot(x, z);
+  const r = coastR(a);
+  if (d > r) continue;
+  // gentle hills, highest towards the back left; flat by the path, the pond and the buildings
+  let h = Math.max(0, Math.round(5.5 * nHill(x / 9, z / 9) - 2.2 + Math.max(0, 6 - Math.hypot(x + 15, z + 14) / 1.6)));
+  if (d > r - 2) h = Math.min(h, 1);
+  if (pathAt(x, z) || pond(x, z)) h = 0;
+  if (x > -33 && x < -18 && z > 8 && z < 23) h = 0;   // the chalet's yard
+  if (x > -22 && x < -12 && z > 21 && z < 30) h = 0;  // the shed
+  if (x > -4 && x < 7 && z > -22 && z < -14) h = 0;   // the goal
+  if (x > -2 && x < 20 && z > -5 && z < 17) h = 0;    // the track and its clubhouse
+  const water = pond(x, z);
+  const t = nTint(x / 5, z / 5);
+  const grass = t > 0.62 ? PAL.grassB : t < 0.3 ? PAL.moss : PAL.grassA;
+  const surface = water ? -2 : h;
+  top.set(`${x},${z}`, surface);
+  if (water) {
+    set(x, -2, z, pondDeep(x, z) ? PAL.waterDeep : PAL.water);
+    set(x, -3, z, PAL.sand);
+  } else {
+    set(x, h, z, laneAt(x, z) ? PAL.white : trackAt(x, z) ? PAL.track : pathAt(x, z) ? PAL.path : (pond(x + 1, z) || pond(x - 1, z) || pond(x, z + 1) || pond(x, z - 1)) ? PAL.sand : grass);
+    for (let y = h - 1; y >= -2; y--) set(x, y, z, y >= h - 1 ? PAL.dirt : PAL.dirt);
+  }
+  // the tapering underside: strata, then rock, with a few long spikes
+  const edge = r - d;
+  let depth = Math.round(Math.min(edge, 20) * 1.1 + 1 + 5 * nDepth(x / 9, z / 9) * Math.min(1, edge / 4));
+  if (edge > 8) depth += Math.round(10 * Math.max(0, nDepth(x / 5 + 9, z / 5) - 0.7) / 0.3);
+  for (let y = -3 - (water ? 1 : 0); y >= -depth; y--) {
+    const k = -y;
+    set(x, y, z, k <= 4 ? PAL.dirt : (k + Math.round(nTint(x / 3, z / 3) * 3)) % 9 === 0 ? PAL.strataSand
+      : (k + Math.round(nTint(x / 4 + 3, z / 4) * 3)) % 13 === 0 ? PAL.strataRed : rand() < 0.5 ? PAL.stone : PAL.stoneDark);
+  }
+  if (edge < 2.5 && rand() < 0.3) set(x, -3, z, PAL.moss);
+}
+const G = (x, z) => (H(x, z) ?? 0) + 1;   // first free block above the ground
+
+/* flowers in the meadow */
+for (const [k, h] of top) {
+  const [x, z] = k.split(',').map(Number);
+  if (h < 0 || pathAt(x, z) || nearTrack(x, z) || rand() > 0.025) continue;
+  set(x, h + 1, z, [PAL.yellow, PAL.white, '#e07a8a', '#9a86d6'][Math.floor(rand() * 4)]);
+}
+
+/* chalet: coding. Plaster ground floor, wooden upper floor, a gable roof with overhang, a balcony */
+{
+  const x0 = -31, x1 = -20, z0 = 10, z1 = 18, gy = 1;
+  fill(x0, gy, z0, x1, gy + 4, z1, PAL.plaster);
+  fill(x0, gy + 5, z0, x1, gy + 8, z1, PAL.wood);
+  fill(x0, gy + 5, z0, x1, gy + 5, z1, PAL.beam);
+  for (let x = x0; x <= x1; x += 4) fill(x, gy + 6, z1, x, gy + 8, z1, PAL.beam);
+  // gable roof: rises one block per block towards the ridge along x
+  const mid = (z0 + z1) / 2;
+  for (let i = 0; i <= Math.ceil((z1 - z0) / 2) + 1; i++) {
+    const y = gy + 9 + i;
+    for (const z of [z0 - 1 + i, z1 + 1 - i]) fill(x0 - 1, y, z, x1 + 1, y, z, PAL.roofTerra);
+    if (z0 - 1 + i < mid) fill(x0, y - 1, z0 + i, x0, y - 1, z1 - i, PAL.wood), fill(x1, y - 1, z0 + i, x1, y - 1, z1 - i, PAL.wood);
+    if (z0 - 1 + i >= mid) break;
+  }
+  fill(x1 - 3, gy + 11, z0 + 1, x1 - 2, gy + 15, z0 + 2, PAL.chimney);
+  fill(x0 + 5, gy, z1, x0 + 6, gy + 2, z1, PAL.door);
+  // balcony on the front
+  fill(x0 + 1, gy + 5, z1 + 1, x1 - 1, gy + 5, z1 + 2, PAL.wood);
+  for (let x = x0 + 1; x <= x1 - 1; x += 2) set(x, gy + 6, z1 + 2, PAL.beam);
+  fill(x0 + 1, gy + 7, z1 + 2, x1 - 1, gy + 7, z1 + 2, PAL.beam);
+  // windows: ground and upper floor, front and side
+  const win = (x, y, z) => { glow.set(K(x, y, z), PAL.glassDay); vox.delete(K(x, y, z)); };
+  for (const x of [x0 + 2, x0 + 9]) for (const dx of [0, 1]) for (const dy of [0, 1]) win(x + dx, gy + 2 + dy, z1);
+  for (const x of [x0 + 2, x0 + 6, x0 + 9]) for (const dy of [0, 1]) win(x, gy + 6 + dy, z1);
+  for (const z of [z0 + 2, z1 - 2]) for (const dy of [0, 1]) win(x1, gy + 2 + dy, z), win(x1, gy + 6 + dy, z);
+  hotspots.push({ p: [(x0 + x1) / 2, gy + 17, mid], name: 'Coding', dot: '#3a82d6', href: '#projects' });
+  // Swiss flag in the yard
+  fill(-30, 1, 21, -30, 14, 21, PAL.white);
+  fill(-29, 9, 21, -24, 14, 21, PAL.red);
+  fill(-27, 10, 21, -26, 13, 21, PAL.white); fill(-28, 11, 21, -25, 12, 21, PAL.white);
+}
+/* server shed: the homelab */
+{
+  const x0 = -20, x1 = -14, z0 = 23, z1 = 28, gy = 1;
+  fill(x0, gy, z0, x1, gy + 4, z1, PAL.cream);
+  fill(x0 - 1, gy + 5, z0 - 1, x1 + 1, gy + 5, z1 + 1, PAL.roofServer);
+  fill(x0, gy + 6, z0, x1, gy + 6, z1, PAL.roofServer);
+  fill(x0 + 2, gy, z1, x0 + 3, gy + 2, z1, PAL.dark);
+  glow.set(K(x1 - 1, gy + 3, z1), PAL.led); vox.delete(K(x1 - 1, gy + 3, z1));
+  glow.set(K(x1 - 2, gy + 3, z1), '#3a82d6'); vox.delete(K(x1 - 2, gy + 3, z1));
+  fill(x1 - 1, gy + 7, z0 + 1, x1 - 1, gy + 12, z0 + 1, PAL.mast);   // antenna
+  hotspots.push({ p: [(x0 + x1) / 2, gy + 9, (z0 + z1) / 2], name: 'Homelab', dot: '#59626f', href: '#homelab' });
+}
+/* floorball goal, net as a mesh of white blocks, and a ball */
+{
+  const x0 = -2, x1 = 5, z0 = -17, gy = 1;
+  fill(x0, gy, z0, x0, gy + 4, z0, PAL.red); fill(x1, gy, z0, x1, gy + 4, z0, PAL.red); fill(x0, gy + 4, z0, x1, gy + 4, z0, PAL.red);
+  fill(x0, gy, z0 - 3, x1, gy, z0 - 3, PAL.red); fill(x0, gy, z0, x0, gy, z0 - 3, PAL.red); fill(x1, gy, z0, x1, gy, z0 - 3, PAL.red);
+  for (let x = x0; x <= x1; x++) for (let y = gy + 1; y <= gy + 3; y++) if ((x + y) % 2 === 0) set(x, y, z0 - 3, PAL.white);
+  for (let z = z0 - 2; z <= z0 - 1; z++) for (let y = gy + 1; y <= gy + 3; y++) if ((z + y) % 2 === 0) { set(x0, y, z, PAL.white); set(x1, y, z, PAL.white); }
+  for (let x = x0 + 1; x < x1; x++) for (let z = z0 - 2; z <= z0 - 1; z++) if ((x + z) % 2 === 0) set(x, gy + 4, z, PAL.white);
+  set(x0 + 4, gy, z0 + 3, PAL.white);   // the ball
+  hotspots.push({ p: [(x0 + x1) / 2, gy + 7, z0 - 1], name: 'Floorball', dot: '#cf3a34', href: '#training' });
+}
+/* clubhouse by the track: running and cycling */
+{
+  const x0 = 3, x1 = 11, z0 = 11, z1 = 15, gy = 1;
+  fill(x0, gy, z0, x1, gy + 4, z1, PAL.barnRed);
+  fill(x0, gy, z0, x1, gy, z1, PAL.stone);                          // stone base
+  fill(x0 - 1, gy + 5, z0 - 2, x1 + 1, gy + 5, z1 + 1, PAL.roofSlate);  // roof, overhanging over the track side
+  fill(x0, gy + 6, z0, x1, gy + 6, z1, PAL.roofSlate);
+  for (const x of [x0 - 1, x1 + 1]) fill(x, gy, z0 - 2, x, gy + 4, z0 - 2, PAL.beam);   // posts of the porch
+  fill(x0 + 4, gy, z0, x0 + 5, gy + 2, z0, PAL.door);
+  const win = (x, y, z) => { glow.set(K(x, y, z), PAL.glassDay); vox.delete(K(x, y, z)); };
+  for (const x of [x0 + 1, x0 + 2, x1 - 2, x1 - 1]) for (const dy of [0, 1]) win(x, gy + 2 + dy, z0);
+  fill(x0 + 1, gy, z0 - 1, x0 + 3, gy, z0 - 1, PAL.wood);           // a bench under the porch
+  hotspots.push({ p: [(x0 + x1) / 2, gy + 10, (z0 + z1) / 2], name: 'Running & cycling', dot: '#3fae5a', href: '#training' });
+}
+/* a jetty into the pond */
+fill(26, -1, -16, 27, -1, -21, PAL.wood);
+for (const z of [-18, -21]) { set(26, -2, z, PAL.beam); set(27, -2, z, PAL.beam); }
+hotspots.push({ p: [23, 3, -23], name: 'Swimming', dot: '#5e9fd0', href: '#water' });
+
+/* trees: round leaf trees and pines, wherever the meadow is free */
+const freeAt = (x, z) => { const h = H(x, z); return h !== undefined && h >= 0 && !pathAt(x, z) && !pond(x, z) && !nearTrack(x, z); };
+function clear(x, z, r) { for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) { if (!freeAt(x + dx, z + dz)) return false; for (let y = 1; y < 9; y++) { const k = K(x + dx, G(x + dx, z + dz) + y - 1, z + dz); if (vox.has(k) && ![PAL.yellow, PAL.white, '#e07a8a', '#9a86d6'].includes(vox.get(k))) return false; } } return true; }
+function leafTree(x, z) {
+  const gy = G(x, z), c = rand() < 0.5 ? PAL.leavesA : PAL.leavesB, ht = 4 + Math.floor(rand() * 2);
+  fill(x, gy, z, x, gy + ht, z, PAL.trunk);
+  const cy = gy + ht + 2, r = 2.6 + rand() * 0.6;
+  for (let dx = -3; dx <= 3; dx++) for (let dy = -3; dy <= 3; dy++) for (let dz = -3; dz <= 3; dz++)
+    if (dx * dx + dy * dy * 1.3 + dz * dz <= r * r) set(x + dx, cy + dy, z + dz, rand() < 0.15 ? (c === PAL.leavesA ? PAL.leavesB : PAL.leavesA) : c);
+}
+function pine(x, z) {
+  const gy = G(x, z), c = rand() < 0.5 ? PAL.pine : PAL.pineB;
+  fill(x, gy, z, x, gy + 2, z, PAL.trunk);
+  for (let y = 0; y < 9; y++) { const r = 3 - y / 3; for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) if (dx * dx + dz * dz <= r * r) set(x + dx, gy + 3 + y, z + dz, c); }
+  set(x, gy + 12, z, c);
+}
+let planted = 0;
+for (let tries = 0; tries < 4000 && planted < 26; tries++) {
+  const u = (rand() * 2 - 1) * EA * 0.9, v = (rand() * 2 - 1) * EB * 0.9, x = Math.round((u + v) / Math.SQRT2), z = Math.round((v - u) / Math.SQRT2);
+  // keep the crowns clear of the runner's and the cyclist's heads
+  if (Math.abs(Math.hypot(x, z) - ringR(Math.atan2(z, x))) < 5 || (z > 3 && Math.abs(x - pathX(z)) < 5) || (Math.abs(x) < 5 && z > -16 && z < 4)) continue;
+  if (!clear(x, z, 2)) continue;
+  (rand() < 0.55 ? leafTree : pine)(x, z); planted++;
+}
+
+/* ---------- three.js: one baked mesh with per-vertex block AO (like the city's bakeStatic), the city's lights ---------- */
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(28, 1, 1, 600);
+const m4 = new THREE.Matrix4(), col = new THREE.Color();
+
+function bake() {
+  const solid = (x, y, z) => vox.has(K(x, y, z)) || glow.has(K(x, y, z));
+  // normal, then u and v with u × v = normal, so the corners run counter-clockwise seen from outside
+  const FACES = [
+    [[1, 0, 0], [0, 1, 0], [0, 0, 1]], [[-1, 0, 0], [0, 0, 1], [0, 1, 0]],
+    [[0, 1, 0], [0, 0, 1], [1, 0, 0]], [[0, -1, 0], [1, 0, 0], [0, 0, 1]],
+    [[0, 0, 1], [1, 0, 0], [0, 1, 0]], [[0, 0, -1], [0, 1, 0], [1, 0, 0]],
+  ];
+  const AO = [0.5, 0.68, 0.84, 1];
+  const pos = [], nor = [], uv = [], colr = [], idx = [];
+  const c = new THREE.Color();
+  for (const [k, hex] of vox) {
+    const [x, y, z] = k.split(',').map(Number);
+    c.set(hex);
+    for (const [n, u, v] of FACES) {
+      if (solid(x + n[0], y + n[1], z + n[2])) continue;
+      const base = pos.length / 3, ao = [];
+      for (const [su, sv] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        const o = [x + n[0], y + n[1], z + n[2]];
+        const s1 = solid(o[0] + su * u[0], o[1] + su * u[1], o[2] + su * u[2]);
+        const s2 = solid(o[0] + sv * v[0], o[1] + sv * v[1], o[2] + sv * v[2]);
+        const cr = solid(o[0] + su * u[0] + sv * v[0], o[1] + su * u[1] + sv * v[1], o[2] + su * u[2] + sv * v[2]);
+        const a = AO[s1 && s2 ? 0 : 3 - (s1 + s2 + cr)];
+        ao.push(a);
+        pos.push((x + (n[0] + su * u[0] + sv * v[0]) / 2) * S, (y + (n[1] + su * u[1] + sv * v[1]) / 2) * S, (z + (n[2] + su * u[2] + sv * v[2]) / 2) * S);
+        nor.push(...n); uv.push(su > 0 ? 1 : 0, sv > 0 ? 1 : 0);
+        colr.push(c.r * a, c.g * a, c.b * a);
+      }
+      // split the quad along the brighter diagonal, so the AO doesn't show a seam
+      if (ao[0] + ao[2] >= ao[1] + ao[3]) idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      else idx.push(base + 1, base + 2, base + 3, base + 1, base + 3, base);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3));
+  g.setIndex(idx);
+  const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: edgeTex, vertexColors: true }));
+  m.castShadow = m.receiveShadow = true;
+  return m;
+}
+scene.add(bake());
+
+/* windows and LEDs: their own small mesh, so they can light up at night */
+const glowKeys = [...glow.keys()];
+const glowMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(S, S, S), new THREE.MeshLambertMaterial({ map: edgeTex }), glowKeys.length);
+glowKeys.forEach((k, i) => { const [x, y, z] = k.split(',').map(Number); m4.makeTranslation(x * S, y * S, z * S); glowMesh.setMatrixAt(i, m4); glowMesh.setColorAt(i, col.set(glow.get(k))); });
+glowMesh.receiveShadow = true;
+scene.add(glowMesh);
+
+const hemi = new THREE.HemisphereLight('#eaf2ff', '#8a7a62', 1.4);
+const sun = new THREE.DirectionalLight('#fff6e8', 2.4);
+sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 160 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
+scene.add(hemi, sun, sun.target);
+
+/* ---------- a runner and a cyclist going round the track, little people like the city's ---------- */
+// Same sizes as Homelab City's people (legs, torso, head, sleeves, hair), in world units, facing +x.
+// The track's surface is at y = S / 2.
+const boxGeo = new THREE.BoxGeometry(1, 1, 1), mats = new Map();
+const matOf = (c) => { if (!mats.has(c)) mats.set(c, new THREE.MeshLambertMaterial({ map: edgeTex, color: c })); return mats.get(c); };
+const GY = S / 2 - 0.5;   // the city's people stand on y = 0.5
+function part(g, c, x, y, z, sx, sy, sz) {
+  const m = new THREE.Mesh(boxGeo, matOf(c)); m.scale.set(sx, sy, sz); m.position.set(x, y + GY, z);
+  m.castShadow = true; g.add(m); return m;
+}
+function person(g, shirt, hair, y0 = 0) {
+  const p = {};
+  p.legs = part(g, '#3d4152', 0, 0.68 + y0, 0, 0.2, 0.36, 0.26);
+  p.torso = part(g, shirt, 0, 1.06 + y0, 0, 0.24, 0.4, 0.36);
+  p.head = part(g, '#d9a882', 0, 1.42 + y0, 0, 0.3, 0.3, 0.3);
+  p.hair = part(g, hair, -0.02, 1.6 + y0, 0, 0.32, 0.08, 0.32);
+  p.arms = [-1, 1].map((sd) => part(g, shirt, 0, 1.04 + y0, sd * 0.23, 0.12, 0.34, 0.1));
+  return p;
+}
+// the runner: red shirt like the city's runner, bobbing, sleeves swinging
+const runnerG = new THREE.Group(); scene.add(runnerG);
+const runnerP = person(runnerG, '#e5483e', '#3a2a20');
+// the cyclist: a little bike under the same kind of person, leaning over the bar, with a helmet
+const cyclistG = new THREE.Group(); scene.add(cyclistG);
+for (const x of [-0.42, 0.42]) { part(cyclistG, '#2a2622', x, 0.72, 0, 0.5, 0.5, 0.06); part(cyclistG, '#a9afb7', x, 0.72, 0, 0.1, 0.1, 0.08); }
+part(cyclistG, '#3a82d6', 0, 0.9, 0, 0.7, 0.07, 0.07);                // top tube
+part(cyclistG, '#3a82d6', -0.16, 0.86, 0, 0.07, 0.3, 0.07);           // seat tube
+part(cyclistG, '#3a82d6', 0.36, 0.98, 0, 0.07, 0.24, 0.07);           // head tube
+part(cyclistG, '#2a2622', 0.38, 1.12, 0, 0.06, 0.06, 0.34);           // handlebar
+const rider = new THREE.Group(); cyclistG.add(rider);
+const riderP = person(rider, '#3f8fd0', '#f2c94c', 0.2);
+riderP.hair.scale.set(0.34, 0.12, 0.34);                              // a helmet instead of hair
+rider.position.set(-0.16, 0, 0); rider.rotation.z = -0.42;            // leaning forward over the bar
+riderP.arms.forEach((a) => { a.rotation.z = -0.9; a.position.x += 0.12; });
+/* routes as closed polylines in block coordinates; both move at a steady speed along them */
+function route(pts) {
+  const len = [0];
+  for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  return { pts, len, total: len[len.length - 1] };
+}
+function at(r, d) {
+  d = ((d % r.total) + r.total) % r.total;
+  let lo = 0, hi = r.len.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (r.len[m] <= d) lo = m; else hi = m; }
+  const f = (d - r.len[lo]) / Math.max(1e-6, r.len[hi] - r.len[lo]), p = r.pts[lo], q = r.pts[hi];
+  return [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f];
+}
+// the loop round the island, anticlockwise seen from above, starting where the main path meets it
+const ringPts = (a0, n = 160) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 - i / n * Math.PI * 2, r = ringR(a); return [Math.cos(a) * r, Math.sin(a) * r]; });
+// the main path, from the track out west to the ring
+const pathPts = [];
+for (let z = 5; z < 60; z += 0.5) { const x = pathX(z); pathPts.push([x, z]); if (Math.hypot(x, z) >= ringR(Math.atan2(z, x))) break; }
+const [px, pz] = pathPts[pathPts.length - 1], aJoin = Math.atan2(pz, px);
+// one lap of the track's inside lane, starting and ending at its west end, anticlockwise
+const trackLap = (lane) => Array.from({ length: 65 }, (_, i) => { const t = Math.PI - i / 64 * Math.PI * 2; return [TR.cx + (TR.rx - lane) * Math.cos(t), TR.cz + (TR.rz - lane) * Math.sin(t)]; });
+// the runner: seven laps of the track, out along the path, once round the island, back; about half the time each
+const lap = trackLap(TR.w * 0.75);
+const runPts = [...lap, ...lap.slice(1), ...lap.slice(1), ...lap.slice(1), ...lap.slice(1), ...lap.slice(1), ...lap.slice(1), ...pathPts, ...ringPts(aJoin).slice(1), ...pathPts.slice().reverse().slice(1), lap[0]];
+const runner = { r: route(runPts), d: 0, speed: 1.7 };      // blocks per second
+// the cyclist: never on the track, always round the island
+const cyclist = { r: route(ringPts(aJoin + 2)), d: 0, speed: 4 };
+function follow(f, g) {
+  const [x, z] = at(f.r, f.d), [x2, z2] = at(f.r, f.d + 0.8), [x1, z1] = at(f.r, f.d - 0.8);
+  g.position.set(x * S, g.position.y, z * S); g.rotation.y = Math.atan2(-(z2 - z1), x2 - x1);
+}
+let clock = 0;
+function moveFigures(dt) {
+  clock += dt;
+  runner.d += runner.speed * dt; cyclist.d += cyclist.speed * dt;
+  follow(runner, runnerG); follow(cyclist, cyclistG);
+  const bob = Math.abs(Math.sin(clock * 14)) * 0.08;
+  runnerG.position.y = bob + (H(Math.round(runnerG.position.x / S), Math.round(runnerG.position.z / S)) ?? 0) * S;
+  cyclistG.position.y = (H(Math.round(cyclistG.position.x / S), Math.round(cyclistG.position.z / S)) ?? 0) * S;
+  runnerP.arms.forEach((a, i) => { a.position.x = (i ? 1 : -1) * bob * 2.4; });
+  rider.position.y = Math.abs(Math.sin(clock * 11)) * 0.02;            // pedalling
+}
+moveFigures(0);
+
+/* ---------- weather: a snapshot here; the real page would get it from its own backend ---------- */
+const WX = await (async () => {
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=47.12&longitude=7.34&current=temperature_2m,weather_code,cloud_cover,precipitation,wind_speed_10m&timezone=Europe%2FZurich', { signal: ctl.signal });
+    const c = (await r.json()).current;
+    return { time: c.time.slice(11, 16), temp: c.temperature_2m, code: c.weather_code, cover: c.cloud_cover, wind: c.wind_speed_10m, precip: c.precipitation };
+  } catch (e) { return null; }
+})() ?? { time: '', temp: null, code: 1, cover: 10, wind: 5, precip: 0 };
+const kind = (c) => c <= 1 ? 'clear' : c === 2 ? 'partly' : c === 3 ? 'cloudy' : c === 45 || c === 48 ? 'fog'
+  : (c >= 71 && c <= 77) || c === 85 || c === 86 ? 'snow' : c >= 95 ? 'storm' : c >= 51 ? 'rain' : 'cloudy';
+const WK = kind(WX.code);
+const WNAME = { clear: 'Clear', partly: 'Partly cloudy', cloudy: 'Overcast', fog: 'Fog', rain: 'Rain', snow: 'Snow', storm: 'Thunderstorm' }[WK];
+if (WX.temp != null) document.getElementById('sky').innerHTML = `<b>${WX.temp.toFixed(0)}°</b><span>${WNAME}</span><span class="soft">Seeland · ${WX.time}</span>`;
+else document.getElementById('sky').hidden = true;
+
+/* clouds: flat voxel clouds that drift with the wind and cast shadows */
+const cloudMat = new THREE.MeshLambertMaterial({ map: edgeTex, color: '#f4f5f7', transparent: true, opacity: 0.85 });
+const clouds = new THREE.Group(); scene.add(clouds);
+{
+  const n = Math.round(WX.cover / 100 * (WK === 'fog' ? 6 : 11));
+  const cubes = [];
+  for (let c = 0; c < n; c++) {
+    const cx = Math.round(-50 + rand() * 100), cz = Math.round(-50 + rand() * 100), cy = 64 + Math.round(rand() * 10);
+    const rx = 6 + Math.round(rand() * 6), rz = 4 + Math.round(rand() * 4);
+    for (let x = -rx; x <= rx; x++) for (let z = -rz; z <= rz; z++) {
+      if ((x / rx) ** 2 + (z / rz) ** 2 > 1 + rand() * 0.3) continue;
+      cubes.push([cx + x, cy, cz + z]);
+      const e = (x / rx) ** 2 + (z / rz) ** 2;
+      if (e < 0.55) cubes.push([cx + x, cy + 1, cz + z]);
+      if (e < 0.25 && rand() < 0.8) cubes.push([cx + x, cy + 2, cz + z]);
+    }
+  }
+  const cm = new THREE.InstancedMesh(new THREE.BoxGeometry(S, S, S), cloudMat, Math.max(1, cubes.length));
+  cm.count = cubes.length; cm.castShadow = true;
+  cubes.forEach(([x, y, z], i) => { m4.makeTranslation(x * S, y * S, z * S); cm.setMatrixAt(i, m4); });
+  clouds.add(cm);
+}
+/* fog: scene.fog, set in light() */
+const mist = new THREE.Group();
+/* rain or snow: falling streaks over the island */
+const drops = [];
+let dropMesh = null;
+if (WK === 'rain' || WK === 'storm' || WK === 'snow') {
+  const snow = WK === 'snow', n = snow ? 260 : 320;
+  dropMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(snow ? 0.18 : 0.06, snow ? 0.18 : 0.7, snow ? 0.18 : 0.06),
+    new THREE.MeshBasicMaterial({ color: snow ? '#ffffff' : '#9fc3e6', transparent: true, opacity: snow ? 0.9 : 0.55 }), n);
+  for (let i = 0; i < n; i++) drops.push({ x: -20 + rand() * 40, y: rand() * 16, z: -20 + rand() * 40, v: snow ? 1.5 + rand() : 14 + rand() * 4 });
+  scene.add(dropMesh);
+}
+
+let camDist = 80;
+function fit() {
+  const w = hero.clientWidth, h = hero.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h;
+  const dist = camDist = Math.max(80, 118 / (w / h));   // the island is about 50 units wide
+  camera.position.set(dist * 0.62, dist * 0.55, dist * 0.62);
+  camera.lookAt(0, -2, 0);
+  camera.updateProjectionMatrix();
+}
+
+/* always the real sun, dimmed by the cloud cover, like the city */
+let night = 0;
+function light() {
+  const { elev, ha } = sunNow();
+  night = Math.min(1, Math.max(0, (-elev * 180 / Math.PI + 2) / 8));
+  root.dataset.time = night > 0.5 ? 'night' : 'day';
+  const cover = WK === 'fog' ? 0.7 : WX.cover / 100 * 0.85;
+  sun.position.set(-Math.sin(ha) * 40 + 20, Math.max(8, Math.sin(Math.max(elev, 0.15)) * 70), 30 + Math.cos(ha) * 10);
+  sun.intensity = (2.4 * 1.4 * (1 - night) + 0.25 * night) * (1 - 0.75 * cover);
+  sun.color.set(night > 0.5 ? '#9fb4ff' : '#fff6e8');
+  hemi.intensity = 1.4 * (1 - 0.3 * (1 - night)) * (1 - 0.65 * night) * (1 + 0.25 * cover);
+  hemi.color.set(night > 0.5 ? '#7d8fc2' : '#eaf2ff');
+  renderer.toneMappingExposure = 1 + 0.4 * night;
+  cloudMat.color.set(night > 0.5 ? '#5d6475' : cover > 0.6 ? '#dfe2e6' : '#f4f5f7');
+  scene.fog = WK === 'fog' ? new THREE.Fog(night > 0.5 ? '#2b3244' : '#d5d8dc', camDist * 0.62, camDist * 1.7) : null;
+  glowKeys.forEach((k, i) => {
+    const base = glow.get(k), window = base === PAL.glassDay;
+    glowMesh.setColorAt(i, col.set(window && night > 0.5 ? PAL.lit : base).multiplyScalar(night > 0.5 ? 1.8 : 1));
+  });
+  glowMesh.instanceColor.needsUpdate = true;
+}
+
+/* tags on the map, small and see-through like the city's; each links to its section */
+const labels = document.getElementById('labels');
+const tags = hotspots.map((h) => {
+  const a = document.createElement('a');
+  a.className = 'tag'; a.href = h.href;
+  a.innerHTML = `<b style="background:${h.dot}"></b>${h.name}`;
+  labels.appendChild(a); return a;
+});
+const v3 = new THREE.Vector3();
+function place() {
+  const w = hero.clientWidth, h = hero.clientHeight;
+  hotspots.forEach((s, i) => {
+    v3.set(...W2(s.p)).project(camera);
+    const x = (v3.x + 1) / 2 * w, y = (1 - v3.y) / 2 * h;
+    tags[i].style.transform = `translate(${Math.round(x - tags[i].offsetWidth / 2)}px, ${Math.round(y - tags[i].offsetHeight)}px)`;
+  });
+}
+
+/* calm motion only: clouds drift with the wind, rain falls; nothing moves with reduced motion */
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const drift = 0.15 + WX.wind / 40;   // blocks per second
+let last = performance.now();
+function step(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  clouds.position.x += drift * dt; if (clouds.position.x > 28) clouds.position.x -= 56;
+  mist.rotation.y += 0.01 * dt;
+  moveFigures(dt);
+  if (dropMesh) {
+    drops.forEach((d, i) => {
+      d.y -= d.v * dt; if (d.y < 0) d.y += 16;
+      m4.makeTranslation(d.x, d.y, d.z); dropMesh.setMatrixAt(i, m4);
+    });
+    dropMesh.instanceMatrix.needsUpdate = true;
+  }
+}
+function draw() { renderer.render(scene, camera); place(); }
+function loop(now) { step(now); draw(); requestAnimationFrame(loop); }
+fit(); light(); draw();
+new ResizeObserver(() => { fit(); light(); draw(); }).observe(hero);
+setInterval(() => { light(); draw(); }, 60000);
+if (!still) requestAnimationFrame(loop);
+</script>
+</body>
+</html>
